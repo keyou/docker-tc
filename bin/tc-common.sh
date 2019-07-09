@@ -17,6 +17,7 @@ qdisc_next() {
 qdisc_netm() {
     IF="$1"
     shift
+    echo info: tc qdisc add dev "$IF" $QDISC_HANDLE netem $@
     tc qdisc add dev "$IF" $QDISC_HANDLE netem $@
     qdisc_next
 }
@@ -24,6 +25,7 @@ qdisc_netm() {
 qdisc_tbf() {
     IF="$1"
     shift
+    echo info: tc qdisc add dev "$IF" $QDISC_HANDLE tbf burst 5kb latency 50ms $@
     tc qdisc add dev "$IF" $QDISC_HANDLE tbf burst 5kb latency 50ms $@
     qdisc_next
 }
