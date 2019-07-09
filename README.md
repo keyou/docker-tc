@@ -1,3 +1,5 @@
+This is forked from https://github.com/lukaszlach/docker-tc 
+
 # Docker Traffic Control
 
 ![Version](https://img.shields.io/badge/version-18.12-lightgrey.svg?style=flat)

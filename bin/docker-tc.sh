@@ -44,7 +44,7 @@ while read DOCKER_EVENT; do
         NETWORK_INTERFACE_NAMES=$(docker_network_get_interface "$NETWORK_NAME")
         log "Info: Interface Names [$NETWORK_INTERFACE_NAMES]"
         while read NETWORK_INTERFACE_NAME; do
-            echo "Info: Interface Name [$NETWORK_INTERFACE_NAME]
+            echo "Info: Interface Name [$NETWORK_INTERFACE_NAME]"
             if [ -z "$NETWORK_INTERFACE_NAME" ]; then
                 log "Warning: Network has no corresponding virtual network interface"
                 lock "$CONTAINER_ID"
