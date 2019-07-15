@@ -8,6 +8,13 @@ docker_container_get_networks() {
         "$1" | \
         jq -r '. | keys | join("\n")'
 }
+docker_container_get_interface_specific() {
+    iflink=`docker exec "$1" cat /sys/class/net/eth0/iflink`
+    iflink=`echo $iflink|tr -d '\r'`
+    veth=`grep -l $iflink /sys/class/net/veth*/ifindex`
+    veth=`echo $veth|sed -e 's;^.*net/\(.*\)/ifindex$;\1;'`
+    echo $veth
+}
 docker_container_get_id() {
     docker inspect --format '{{ .Id }}' "$1"
 }

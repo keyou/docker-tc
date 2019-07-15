@@ -6,6 +6,7 @@ set -e
 log() {
     echo "[$(date -Is)] [$CONTAINER_ID] $*"
 }
+echo "==================Start Reading Events====================="
 while read DOCKER_EVENT; do
     # docker events
     CONTAINER_ID=$(echo "$DOCKER_EVENT" | cut -d' ' -f4)
@@ -24,6 +25,7 @@ while read DOCKER_EVENT; do
     if is_locked "$CONTAINER_ID"; then
         continue
     fi
+    log "Info: Detect new container [$CONTAINER_ID:$(docker_container_get_name "$CONTAINER_ID")]"
     docker_container_labels_load "$CONTAINER_ID"
     if [[ "$(docker_container_labels_get "$BASE_LABEL.enabled")" == "0" ]]; then
         lock "$CONTAINER_ID"
@@ -35,15 +37,17 @@ while read DOCKER_EVENT; do
         log "Notice: Skipping container, no valid labels found"
         continue
     fi
-    NETWORK_NAMES=$(docker_container_get_networks "$CONTAINER_ID")
-    if [[ "$NETWORK_NAMES" == *"\n"* ]]; then
-        log "Warning: Container is connected to multiple networks"
-    fi
-    log "Info: Network Names [$NETWORK_NAMES]"
-    while read NETWORK_NAME; do
-        NETWORK_INTERFACE_NAMES=$(docker_network_get_interface "$NETWORK_NAME")
-        log "Info: Interface Names [$NETWORK_INTERFACE_NAMES]"
-        while read NETWORK_INTERFACE_NAME; do
+
+    #NETWORK_NAMES=$(docker_container_get_networks "$CONTAINER_ID")
+    #if [[ "$NETWORK_NAMES" == *"\n"* ]]; then
+    #    log "Warning: Container is connected to multiple networks"
+    #fi
+    #log "Info: Network Names [$NETWORK_NAMES]"
+    #while read NETWORK_NAME; do
+    #    NETWORK_INTERFACE_NAMES=$(docker_network_get_interface "$NETWORK_NAME")
+    #    log "Info: Interface Names [$NETWORK_INTERFACE_NAMES]"
+    #    while read NETWORK_INTERFACE_NAME; do
+            NETWORK_INTERFACE_NAME=$(docker_container_get_interface_specific "$CONTAINER_ID")
             echo "Info: Interface Name [$NETWORK_INTERFACE_NAME]"
             if [ -z "$NETWORK_INTERFACE_NAME" ]; then
                 log "Warning: Network has no corresponding virtual network interface"
@@ -58,6 +62,10 @@ while read DOCKER_EVENT; do
             REORDERING=$(docker_container_labels_get "$BASE_LABEL.reorder")
             tc_init
             qdisc_del "$NETWORK_INTERFACE_NAME" &>/dev/null || true
+            if [ ! -z "$LIMIT" ]; then
+                log "Set bandwidth-limit=$LIMIT on $NETWORK_INTERFACE_NAME"
+                qdisc_tbf "$NETWORK_INTERFACE_NAME" rate "$LIMIT"
+            fi
             OPTIONS_LOG=
             NETM_OPTIONS=
             netm_add_rule() {
@@ -74,14 +82,10 @@ while read DOCKER_EVENT; do
             OPTIONS_LOG=$(echo "$OPTIONS_LOG" | sed 's/[, ]*$//')
             log "Set ${OPTIONS_LOG} on $NETWORK_INTERFACE_NAME"
             qdisc_netm "$NETWORK_INTERFACE_NAME" $NETM_OPTIONS
-            if [ ! -z "$LIMIT" ]; then
-                log "Set bandwidth-limit=$LIMIT on $NETWORK_INTERFACE_NAME"
-                qdisc_tbf "$NETWORK_INTERFACE_NAME" rate "$LIMIT"
-            fi
             lock "$CONTAINER_ID"
             log "Controlling traffic of the container $(docker_container_get_name "$CONTAINER_ID") on $NETWORK_INTERFACE_NAME"
-        done < <(echo -e "$NETWORK_INTERFACE_NAMES")
-    done < <(echo -e "$NETWORK_NAMES")
+    #    done < <(echo -e "$NETWORK_INTERFACE_NAMES")
+    #done < <(echo -e "$NETWORK_NAMES")
 done < <(
     docker ps -q;
     docker events --filter event=start

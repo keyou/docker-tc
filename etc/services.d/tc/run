@@ -9,5 +9,6 @@ cat <<'banner'
 banner
 echo "Starting Docker Traffic Control $DOCKER_TC_VERSION"
 echo "https://github.com/keyou/docker-tc"
+echo "Cautions: Your container must has 'cat' and 'tr' command."
 echo
 exec bash /docker-tc/bin/docker-tc.sh
