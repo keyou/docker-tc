@@ -1,5 +1,5 @@
 DOCKER_IMAGE_NAME ?= docker-tc
-DOCKER_PUBLIC_IMAGE_NAME ?= keyou/docker-tc
+DOCKER_PUBLIC_IMAGE_NAME ?= keiyou/docker-tc
 .PHONY: init build run test push clean
 
 build: init
